@@ -1,3 +1,7 @@
+import numpy as np
+import scipy.sparse as sp
+
+
 def convert_data(X, E, MAX_ATOM, MAX_EDGE, N_FEAT, E_FEAT):
     """Convert an X(node feature), E(edge feature) to desired input format for GNN.
 
@@ -16,8 +20,6 @@ def convert_data(X, E, MAX_ATOM, MAX_EDGE, N_FEAT, E_FEAT):
         Mo (np.array): the mask of actual atoms (batch * MAX_ATOM).
         No (np.array): the inverse sqrt of node degrees for GCN attention 1/sqrt(N(i)*N(j)) (batch * MAX_EDGE).
     """
-    import numpy as np
-    import scipy.sparse as sp
 
     # The adjacency matrix A, the first 6 elements of E are bond information.
     A = E[..., :6].sum(axis=-1) != 0
@@ -63,3 +65,100 @@ def convert_data(X, E, MAX_ATOM, MAX_EDGE, N_FEAT, E_FEAT):
     No = 1 / np.sqrt(no)
 
     return Xo, Ao, Eo, Mo, No
+
+
+def load_molnet_data(func, featurizer, split, seed, MAX_ATOM, MAX_EDGE, N_FEAT, E_FEAT):
+    """Load data from molecule-net datasets.
+    Check https://github.com/deepchem/deepchem/tree/master/deepchem/molnet/load_function for details.
+    Args:
+        func (function): data loading function from molecule-net.
+        featurizer (string): by default, Weave featurizer is used.
+        split (string): the method to split data, e.g. stratified.
+        seed (int): the random seed used to split data.
+        MAX_ATOM (int): the maximum number of atoms zero-padding to.
+        MAX_EDGE (int): the maximum number of edges zero-padding to.
+        N_FEAT (int): the number of node features.
+        E_FEAT (int): the number of edge features.
+
+    Returns:
+        X_train (list): training data.
+        y_train (np.array): training labels.
+        X_valid (list): validation data.
+        y_valid (np.array): validation labels.
+        X_test (list): testing data.
+        y_test (np.array): testing labels.
+        tasks (string): task name.
+        transformers (class): contains functions to normalize and denormalize data.
+    """
+    tasks, \
+    (train_dataset, valid_dataset, test_dataset), \
+    transformers = func(featurizer=featurizer,
+                        split=split,
+                        seed=seed)
+
+    X_train, X_valid, X_test = [], [], []
+    A_train, A_valid, A_test = [], [], []
+    E_train, E_valid, E_test = [], [], []
+    y_train, y_valid, y_test = [], [], []
+    M_train, M_valid, M_test = [], [], []
+    N_train, N_valid, N_test = [], [], []
+    train_x = train_dataset.X
+    train_y = train_dataset.y
+    valid_x = valid_dataset.X
+    valid_y = valid_dataset.y
+    test_x = test_dataset.X
+    test_y = test_dataset.y
+
+    # TRAINING DATASET
+    for i in range(len(train_dataset)):
+        X, A, E, M, N = convert_data(train_x[i].nodes, train_x[i].pairs, MAX_ATOM, MAX_EDGE, N_FEAT, E_FEAT)
+        X_train.append(X)
+        E_train.append(E)
+        A_train.append(A)
+        M_train.append(M)
+        N_train.append(N)
+        y_train.append(train_y[i])
+
+    # VALIDATION DATASET
+    for i in range(len(valid_dataset)):
+        X, A, E, M, N = convert_data(valid_x[i].nodes, valid_x[i].pairs, MAX_ATOM, MAX_EDGE, N_FEAT, E_FEAT)
+        X_valid.append(X)
+        E_valid.append(E)
+        A_valid.append(A)
+        M_valid.append(M)
+        N_valid.append(N)
+        y_valid.append(valid_y[i])
+
+    # TESTING DATASET
+    for i in range(len(test_dataset)):
+        X, A, E, M, N = convert_data(test_x[i].nodes, test_x[i].pairs, MAX_ATOM, MAX_EDGE, N_FEAT, E_FEAT)
+        X_test.append(X)
+        E_test.append(E)
+        A_test.append(A)
+        M_test.append(M)
+        N_test.append(N)
+        y_test.append(test_y[i])
+    X_train = np.array(X_train)
+    A_train = np.array(A_train)
+    E_train = np.array(E_train)
+    M_train = np.array(M_train)
+    N_train = np.array(N_train)
+    y_train = np.array(y_train).squeeze()
+    X_valid = np.array(X_valid)
+    A_valid = np.array(A_valid)
+    E_valid = np.array(E_valid)
+    M_valid = np.array(M_valid)
+    N_valid = np.array(N_valid)
+    y_valid = np.array(y_valid).squeeze()
+    X_test = np.array(X_test)
+    A_test = np.array(A_test)
+    E_test = np.array(E_test)
+    M_test = np.array(M_test)
+    N_test = np.array(N_test)
+    y_test = np.array(y_test).squeeze()
+
+    X_train = [X_train, A_train, E_train, M_train, N_train]
+    X_valid = [X_valid, A_valid, E_valid, M_valid, N_valid]
+    X_test = [X_test, A_test, E_test, M_test, N_test]
+
+    return X_train, y_train, X_valid, y_valid, X_test, y_test, tasks, transformers
