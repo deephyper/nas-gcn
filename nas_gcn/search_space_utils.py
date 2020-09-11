@@ -69,10 +69,11 @@ def gather_cell(node):
     return
 
 
-def create_search_space(input_shape,
-                        output_shape,
-                        num_mpnn_cells,
-                        num_dense_layers):
+def create_search_space(input_shape=None,
+                        output_shape=None,
+                        num_mpnn_cells=3,
+                        num_dense_layers=2,
+                        **kwargs):
     """Create a search space containing multiple Keras architectures
 
     Args:
@@ -84,6 +85,25 @@ def create_search_space(input_shape,
     Returns:
         A search space containing multiple Keras architectures
     """
+    data = kwargs['data']
+    if data == 'qm7':
+        input_shape = [(8+1, 75), (8+1+10+1, 2), (8+1+10+1, 14), (8+1, ), (8+1+10+1, )]
+        output_shape = (1, )
+    elif data == 'qm8':
+        input_shape = [(9+1, 75), (9+1+14+1, 2), (9+1+14+1, 14), (9+1, ), (9+1+14+1, )]
+        output_shape = (16, )
+    elif data == 'qm9':
+        input_shape = [(9+1, 75), (9+1+16+1, 2), (9+1+16+1, 14), (9+1, ), (9+1+16+1, )]
+        output_shape = (12, )
+    elif data == 'freesolv':
+        input_shape = [(24+1, 75), (24+1+25+1, 2), (24+1+25+1, 14), (24+1, ), (24+1+25+1, )]
+        output_shape = (1, )
+    elif data == 'esol':
+        input_shape = [(55+1, 75), (55+1+68+1, 2), (55+1+68+1, 14), (55+1, ), (55+1+68+1, )]
+        output_shape = (1, )
+    elif data == 'lipo':
+        input_shape = [(115+1, 75), (115+1+236+1, 2), (115+1+236+1, 14), (115+1, ), (115+1+236+1, )]
+        output_shape = (1, )
     arch = KSearchSpace(input_shape, output_shape, regression=True)
     source = prev_input = arch.input_nodes[0]
     prev_input1 = arch.input_nodes[1]
