@@ -3,7 +3,7 @@ import tensorflow as tf
 from deephyper.search.nas.model.space import KSearchSpace
 from deephyper.search.nas.model.space.node import ConstantNode, VariableNode
 from deephyper.search.nas.model.space.op.merge import AddByProjecting
-from deephyper.search.nas.model.space.op.gnn import GlobalAvgPool, GlobalSumPool, GlobalMaxPool, SPARSE_MPNN, GlobalAttentionPool, GlobalAttentionSumPool
+from nas_gcn.search.stack_mpnn import GlobalAvgPool, GlobalSumPool, GlobalMaxPool, SPARSE_MPNN, GlobalAttentionPool, GlobalAttentionSumPool
 from deephyper.search.nas.model.space.op.op1d import Dense, Flatten
 from deephyper.search.nas.model.space.op.connect import Connect
 from deephyper.search.nas.model.space.op.basic import Tensor
