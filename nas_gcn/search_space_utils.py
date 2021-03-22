@@ -1,12 +1,21 @@
 import collections
+
 import tensorflow as tf
-from deephyper.search.nas.model.space import KSearchSpace
-from deephyper.search.nas.model.space.node import ConstantNode, VariableNode
-from deephyper.search.nas.model.space.op.merge import AddByProjecting
-from nas_gcn.search.stack_mpnn import GlobalAvgPool, GlobalSumPool, GlobalMaxPool, SPARSE_MPNN, GlobalAttentionPool, GlobalAttentionSumPool
-from deephyper.search.nas.model.space.op.op1d import Dense, Flatten
-from deephyper.search.nas.model.space.op.connect import Connect
-from deephyper.search.nas.model.space.op.basic import Tensor
+from deephyper.nas.space import KSearchSpace
+from deephyper.nas.space.node import ConstantNode, VariableNode
+from deephyper.nas.space.op.basic import Tensor
+from deephyper.nas.space.op.connect import Connect
+from deephyper.nas.space.op.merge import AddByProjecting
+from deephyper.nas.space.op.op1d import Dense, Flatten
+
+from nas_gcn.search.stack_mpnn import (
+    SPARSE_MPNN,
+    GlobalAttentionPool,
+    GlobalAttentionSumPool,
+    GlobalAvgPool,
+    GlobalMaxPool,
+    GlobalSumPool,
+)
 
 
 def mpnn_cell(node):
@@ -20,18 +29,20 @@ def mpnn_cell(node):
     """
     state_dims = [4, 8, 16, 32]
     Ts = [1, 2, 3, 4]
-    attn_methods = ['const', 'gcn', 'gat', 'sym-gat', 'linear', 'gen-linear', 'cos']
+    attn_methods = ["const", "gcn", "gat", "sym-gat", "linear", "gen-linear", "cos"]
     attn_heads = [1, 2, 4, 6]
-    aggr_methods = ['max', 'mean', 'sum']
-    update_methods = ['gru', 'mlp']
-    activations = [tf.keras.activations.sigmoid,
-                   tf.keras.activations.tanh,
-                   tf.keras.activations.relu,
-                   tf.keras.activations.linear,
-                   tf.keras.activations.elu,
-                   tf.keras.activations.softplus,
-                   tf.nn.leaky_relu,
-                   tf.nn.relu6]
+    aggr_methods = ["max", "mean", "sum"]
+    update_methods = ["gru", "mlp"]
+    activations = [
+        tf.keras.activations.sigmoid,
+        tf.keras.activations.tanh,
+        tf.keras.activations.relu,
+        tf.keras.activations.linear,
+        tf.keras.activations.elu,
+        tf.keras.activations.softplus,
+        tf.nn.leaky_relu,
+        tf.nn.relu6,
+    ]
 
     for state_dim in state_dims:
         for T in Ts:
@@ -40,13 +51,17 @@ def mpnn_cell(node):
                     for aggr_method in aggr_methods:
                         for update_method in update_methods:
                             for activation in activations:
-                                node.add_op(SPARSE_MPNN(state_dim=state_dim,
-                                                        T=T,
-                                                        attn_method=attn_method,
-                                                        attn_head=attn_head,
-                                                        aggr_method=aggr_method,
-                                                        update_method=update_method,
-                                                        activation=activation))
+                                node.add_op(
+                                    SPARSE_MPNN(
+                                        state_dim=state_dim,
+                                        T=T,
+                                        attn_method=attn_method,
+                                        attn_head=attn_head,
+                                        aggr_method=aggr_method,
+                                        update_method=update_method,
+                                        activation=activation,
+                                    )
+                                )
     return
 
 
@@ -69,11 +84,9 @@ def gather_cell(node):
     return
 
 
-def create_search_space(input_shape=None,
-                        output_shape=None,
-                        num_mpnn_cells=3,
-                        num_dense_layers=2,
-                        **kwargs):
+def create_search_space(
+    input_shape=None, output_shape=None, num_mpnn_cells=3, num_dense_layers=2, **kwargs
+):
     """Create a search space containing multiple Keras architectures
 
     Args:
@@ -85,25 +98,61 @@ def create_search_space(input_shape=None,
     Returns:
         A search space containing multiple Keras architectures
     """
-    data = kwargs['data']
-    if data == 'qm7':
-        input_shape = [(8+1, 75), (8+1+10+1, 2), (8+1+10+1, 14), (8+1, ), (8+1+10+1, )]
-        output_shape = (1, )
-    elif data == 'qm8':
-        input_shape = [(9+1, 75), (9+1+14+1, 2), (9+1+14+1, 14), (9+1, ), (9+1+14+1, )]
-        output_shape = (16, )
-    elif data == 'qm9':
-        input_shape = [(9+1, 75), (9+1+16+1, 2), (9+1+16+1, 14), (9+1, ), (9+1+16+1, )]
-        output_shape = (12, )
-    elif data == 'freesolv':
-        input_shape = [(24+1, 75), (24+1+25+1, 2), (24+1+25+1, 14), (24+1, ), (24+1+25+1, )]
-        output_shape = (1, )
-    elif data == 'esol':
-        input_shape = [(55+1, 75), (55+1+68+1, 2), (55+1+68+1, 14), (55+1, ), (55+1+68+1, )]
-        output_shape = (1, )
-    elif data == 'lipo':
-        input_shape = [(115+1, 75), (115+1+236+1, 2), (115+1+236+1, 14), (115+1, ), (115+1+236+1, )]
-        output_shape = (1, )
+    data = kwargs["data"]
+    if data == "qm7":
+        input_shape = [
+            (8 + 1, 75),
+            (8 + 1 + 10 + 1, 2),
+            (8 + 1 + 10 + 1, 14),
+            (8 + 1,),
+            (8 + 1 + 10 + 1,),
+        ]
+        output_shape = (1,)
+    elif data == "qm8":
+        input_shape = [
+            (9 + 1, 75),
+            (9 + 1 + 14 + 1, 2),
+            (9 + 1 + 14 + 1, 14),
+            (9 + 1,),
+            (9 + 1 + 14 + 1,),
+        ]
+        output_shape = (16,)
+    elif data == "qm9":
+        input_shape = [
+            (9 + 1, 75),
+            (9 + 1 + 16 + 1, 2),
+            (9 + 1 + 16 + 1, 14),
+            (9 + 1,),
+            (9 + 1 + 16 + 1,),
+        ]
+        output_shape = (12,)
+    elif data == "freesolv":
+        input_shape = [
+            (24 + 1, 75),
+            (24 + 1 + 25 + 1, 2),
+            (24 + 1 + 25 + 1, 14),
+            (24 + 1,),
+            (24 + 1 + 25 + 1,),
+        ]
+        output_shape = (1,)
+    elif data == "esol":
+        input_shape = [
+            (55 + 1, 75),
+            (55 + 1 + 68 + 1, 2),
+            (55 + 1 + 68 + 1, 14),
+            (55 + 1,),
+            (55 + 1 + 68 + 1,),
+        ]
+        output_shape = (1,)
+    elif data == "lipo":
+        input_shape = [
+            (115 + 1, 75),
+            (115 + 1 + 236 + 1, 2),
+            (115 + 1 + 236 + 1, 14),
+            (115 + 1,),
+            (115 + 1 + 236 + 1,),
+        ]
+        output_shape = (1,)
     arch = KSearchSpace(input_shape, output_shape, regression=True)
     source = prev_input = arch.input_nodes[0]
     prev_input1 = arch.input_nodes[1]
@@ -151,13 +200,13 @@ def create_search_space(input_shape=None,
 
     for _ in range(num_dense_layers):
         dense_node = ConstantNode()
-        dense_node.set_op(Dense(32, activation='relu'))
+        dense_node.set_op(Dense(32, activation="relu"))
         arch.connect(prev_input, dense_node)
         prev_input = dense_node
         count_dense_layers += 1
 
     output_node = ConstantNode()
-    output_node.set_op(Dense(output_shape[0], activation='linear'))
+    output_node.set_op(Dense(output_shape[0], activation="linear"))
     arch.connect(prev_input, output_node)
 
     return arch
