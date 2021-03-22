@@ -22,12 +22,15 @@ def convert_data(X, E, MAX_ATOM, MAX_EDGE, N_FEAT, E_FEAT):
     """
 
     # The adjacency matrix A, the first 6 elements of E are bond information.
+    dim = int(E.shape[0] ** 0.5)
+    E = np.reshape(E, (dim, dim, E.shape[-1]))
+
     A = E[..., :6].sum(axis=-1) != 0
     A = A.astype(np.float32)
 
     # The node feature Xo
     Xo = np.zeros(shape=(MAX_ATOM, N_FEAT))
-    Xo[:X.shape[0], :X.shape[1]] = X
+    Xo[: X.shape[0], : X.shape[1]] = X
 
     # Convert A to edge pair format (if I use A_0 = np.zeros(...), the 0 to 0 pair will be emphasized a lot)
     # So I set all to the max_atom, then the max_atom atom has no node features.
@@ -40,6 +43,7 @@ def convert_data(X, E, MAX_ATOM, MAX_EDGE, N_FEAT, E_FEAT):
 
     # The edge feature Eo
     Eo = np.zeros(shape=(MAX_EDGE + MAX_ATOM, E_FEAT))
+
     Eo[:n_edge, :] = [e[a.row, a.col] for e, a in zip([E], [A])][0]
 
     # Fill the zeros in Ao with self loop
@@ -48,7 +52,7 @@ def convert_data(X, E, MAX_ATOM, MAX_EDGE, N_FEAT, E_FEAT):
 
     # The mask for existing nodes
     Mo = np.zeros(shape=(MAX_ATOM,))
-    Mo[:X.shape[0]] = 1
+    Mo[: X.shape[0]] = 1
 
     # The inverse of sqrt of node degrees
     outputa = np.unique(Ao[:, 0], return_counts=True, return_inverse=True)
@@ -67,7 +71,9 @@ def convert_data(X, E, MAX_ATOM, MAX_EDGE, N_FEAT, E_FEAT):
     return Xo, Ao, Eo, Mo, No
 
 
-def load_molnet_data(func, featurizer, split, seed, MAX_ATOM, MAX_EDGE, N_FEAT, E_FEAT):
+def load_molnet_data(
+    func, featurizer, split, seed, MAX_ATOM, MAX_EDGE, N_FEAT, E_FEAT, DATA_DIR
+):
     """Load data from molecule-net datasets.
     Check https://github.com/deepchem/deepchem/tree/master/deepchem/molnet/load_function for details.
     Args:
@@ -90,11 +96,13 @@ def load_molnet_data(func, featurizer, split, seed, MAX_ATOM, MAX_EDGE, N_FEAT, 
         tasks (string): task name.
         transformers (class): contains functions to normalize and denormalize data.
     """
-    tasks, \
-    (train_dataset, valid_dataset, test_dataset), \
-    transformers = func(featurizer=featurizer,
-                        split=split,
-                        seed=seed)
+    tasks, (train_dataset, valid_dataset, test_dataset), transformers = func(
+        featurizer=featurizer,
+        splitter=split,
+        seed=seed,
+        data_dir=DATA_DIR,
+        save_dir=DATA_DIR,
+    )
 
     X_train, X_valid, X_test = [], [], []
     A_train, A_valid, A_test = [], [], []
@@ -109,9 +117,13 @@ def load_molnet_data(func, featurizer, split, seed, MAX_ATOM, MAX_EDGE, N_FEAT, 
     test_x = test_dataset.X
     test_y = test_dataset.y
 
+    print(MAX_ATOM, MAX_EDGE, N_FEAT, E_FEAT)
+
     # TRAINING DATASET
     for i in range(len(train_dataset)):
-        X, A, E, M, N = convert_data(train_x[i].nodes, train_x[i].pairs, MAX_ATOM, MAX_EDGE, N_FEAT, E_FEAT)
+        X, A, E, M, N = convert_data(
+            train_x[i].nodes, train_x[i].pairs, MAX_ATOM, MAX_EDGE, N_FEAT, E_FEAT
+        )
         X_train.append(X)
         E_train.append(E)
         A_train.append(A)
@@ -121,7 +133,9 @@ def load_molnet_data(func, featurizer, split, seed, MAX_ATOM, MAX_EDGE, N_FEAT, 
 
     # VALIDATION DATASET
     for i in range(len(valid_dataset)):
-        X, A, E, M, N = convert_data(valid_x[i].nodes, valid_x[i].pairs, MAX_ATOM, MAX_EDGE, N_FEAT, E_FEAT)
+        X, A, E, M, N = convert_data(
+            valid_x[i].nodes, valid_x[i].pairs, MAX_ATOM, MAX_EDGE, N_FEAT, E_FEAT
+        )
         X_valid.append(X)
         E_valid.append(E)
         A_valid.append(A)
@@ -131,7 +145,9 @@ def load_molnet_data(func, featurizer, split, seed, MAX_ATOM, MAX_EDGE, N_FEAT, 
 
     # TESTING DATASET
     for i in range(len(test_dataset)):
-        X, A, E, M, N = convert_data(test_x[i].nodes, test_x[i].pairs, MAX_ATOM, MAX_EDGE, N_FEAT, E_FEAT)
+        X, A, E, M, N = convert_data(
+            test_x[i].nodes, test_x[i].pairs, MAX_ATOM, MAX_EDGE, N_FEAT, E_FEAT
+        )
         X_test.append(X)
         E_test.append(E)
         A_test.append(A)
