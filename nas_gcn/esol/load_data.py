@@ -1,5 +1,10 @@
+import os
+
 from deepchem.molnet import load_delaney
 from nas_gcn.data_utils import load_molnet_data
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+DIRNAME = HERE.split("/")[-1]
 
 
 def load_data(test=False, seed=2020):
@@ -21,25 +26,42 @@ def load_data(test=False, seed=2020):
     E_FEAT = 14
 
     FUNC = load_delaney
-    FEATURIZER = 'Weave'
-    SPLIT = 'random'
+    FEATURIZER = "Weave"
+    SPLIT = "random"
+    DATA_DIR = os.path.join("/Volumes/T7/data/", DIRNAME)
 
-    X_train, y_train, X_valid, y_valid, X_test, y_test, \
-    tasks, transformers = load_molnet_data(func=FUNC,
-                                           featurizer=FEATURIZER,
-                                           split=SPLIT,
-                                           seed=seed,
-                                           MAX_ATOM=MAX_ATOM,
-                                           MAX_EDGE=MAX_EDGE,
-                                           N_FEAT=N_FEAT,
-                                           E_FEAT=E_FEAT)
+    (
+        X_train,
+        y_train,
+        X_valid,
+        y_valid,
+        X_test,
+        y_test,
+        tasks,
+        transformers,
+    ) = load_molnet_data(
+        func=FUNC,
+        featurizer=FEATURIZER,
+        split=SPLIT,
+        seed=seed,
+        MAX_ATOM=MAX_ATOM,
+        MAX_EDGE=MAX_EDGE,
+        N_FEAT=N_FEAT,
+        E_FEAT=E_FEAT,
+        DATA_DIR=DATA_DIR,
+    )
     if test:
-        return (X_train, y_train), (X_valid, y_valid), (X_test, y_test), \
-               tasks, transformers
+        return (
+            (X_train, y_train),
+            (X_valid, y_valid),
+            (X_test, y_test),
+            tasks,
+            transformers,
+        )
 
     else:
         return (X_train, y_train), (X_valid, y_valid)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     load_data(test=False)
