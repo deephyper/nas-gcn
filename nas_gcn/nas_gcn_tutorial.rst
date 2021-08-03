@@ -282,7 +282,7 @@ Create a problem instance
 ==================
 
 Now, we will take a look at ``problem.py`` which contains the code for the
-problem definition.
+problem definition. ``negmae`` is the negative mean absolute error. You can also defined your own ``tf.keras`` metrics.
 
 .. code-block:: python
 
